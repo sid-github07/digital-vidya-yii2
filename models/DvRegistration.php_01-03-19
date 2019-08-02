@@ -1,0 +1,83 @@
+<?php
+
+namespace app\models;
+
+use Yii;
+
+/**
+ * This is the model class for table "assist_users".
+ *
+ * @property integer $id
+ * @property string $name
+ * @property string $email
+ * @property string $username
+ * @property string $password
+ * @property integer $status
+ * @property string $role
+ * @property string $created_date
+ */
+class DvRegistration extends \yii\db\ActiveRecord{
+    /**
+     * @inheritdoc
+     */
+    const INDIA_ID_FROM_DV_COUNTRY = 101;
+    const DELHI_ID_DV_FROM_STATES = 10;
+    const INDIA_CURRENCY_FROM_DV_CURRENCY = 16;
+    const GST_RATE_IN_OTHER_STATE = 18;
+    const GST_RATE_IN_DELHI = 14;
+    const QB_ID_OF_GST_RATE_IN_DELHI = 27;
+    const QB_ID_OF_GST_RATE_IN_OTHER_STATE = 14;
+    const QB_ID_OF_NONE_GST_RATE = 23;
+    const NONE_GST_RATE = 23;
+    const PAYMENT_MODE_CHEQUE = 2;
+/*    const QB_ID_OF_GST_RATE_IN_DELHI = 53;
+    const QB_ID_OF_GST_RATE_IN_OTHER_STATE = 52;
+    const QB_ID_OF_NONE_GST_RATE = 48;
+    const NONE_GST_RATE = 48;
+    const PAYMENT_MODE_CHEQUE = 8;
+  */  
+    public static function tableName(){
+        return 'assist_participant';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function rules(){
+        return [
+            [['sales_user_id','country','state','city','course_format','modules_allowed','participant_status','incentive_percentage','participant_payment_status','participant_details_status','qb_customer_id','modules_completed','vskills'],'integer'],
+
+            [['first_name','last_name','mobile','total_confirmed_amount','company_institute','designation','secondary_email_ID','linkedin_profile_URL','twitter_handle','course_level_understanding','course_batch','course','promises_notes'],'string'],
+
+            [['dob','scholarship_offered','opt_for_3_months','is_full_payment','is_pdc','experience','sponsor','placement_team_support','internship','participant_extra_details','remarks','free_courses','profile_picture','address','program_objective','describes_current_profile','how_to_know_about_us','available_batch_opt','email','course_batch_date','program_coordinator','promises_notes','vskills'],'safe'], 
+
+
+            [['first_name','last_name','email','mobile','scholarship_offered','course_format','course_batch','modules_allowed','country','state','city','course','is_full_payment','incentive_percentage','participant_status'],'required'],
+            
+        ];
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function attributeLabels()
+    {
+        return [
+           'ref_forfpay' => 'Reference Number (Full Payment or First Payment)',
+           'incentive_percentage' => 'Apply Incentive for this sale',
+        ];
+    }
+
+
+    /**
+    * Check email exist or not
+    **/
+/*    public function validatorEmail($attribute, $params){
+
+        $emailExist = true;
+
+        if($emailExist)
+        $this->addError('email','Email already exists');
+    } */
+
+}

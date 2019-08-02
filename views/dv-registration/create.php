@@ -1,0 +1,22 @@
+<?php
+
+use yii\helpers\Html;
+
+
+/* @var $this yii\web\View */
+/* @var $model app\models\DwUsers */
+
+$this->title = 'Digital Vidya - Participant Registration Form';
+$this->params['breadcrumbs'][] = ['label' => 'All Registration', 'url' => ['index']];
+$this->params['breadcrumbs'][] = 'New Registration'; ?>
+<!-- <div style="min-height:35px; "></div> -->
+<div class="container">
+  <div class="row">
+    <div class="col-md-10">
+    	<div class="dv-participant-create">
+    		<?= $this->render('_form', [ 'model' => $model, 'incentive'=>$incentive, 'allPaymentmethod' => $allPaymentmethod,'companycurrency' => $companycurrency]) ?>
+    	</div>
+    </div>
+    <div class="col-md-2"></div>
+  </div>
+</div>

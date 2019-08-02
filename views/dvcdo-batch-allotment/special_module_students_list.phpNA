@@ -1,0 +1,117 @@
+<?php
+
+use yii\helpers\Html;
+use yii\widgets\ActiveForm;
+use yii\helpers\ArrayHelper;
+use app\models\DvCourse;
+use yii\web\Session;
+use yii\helpers\Url;
+use yii\widgets\LinkPager;
+$this->title = "Unallocated Students list : Special Session";
+$this->params['breadcrumbs'][] = "Unallocated Students list : Special Session"; ?>
+<div class="table-responsive">
+  	<div class="form-group col-md-3">
+		<input type="button" name="Allocate Batch" value="Allocate Batch" onclick="get_batchs_data();" class="btn btn-warning" data-toggle="tooltip" data-placement="top" title="Allocate Batch">
+	</div>
+	<table class="table table-striped" style="width:100%">
+	    <thead>
+	        <tr> 
+	            <th><input type="checkbox" name="checkAll" id="checkAll"/></th>
+	            <th>Allowed Module</th>
+	            <th>Completed Module</th>
+	            <th>Course Status</th>
+	            <th>Name</th>
+	            <th>Email</th>
+	            <th>Last Date</th>
+	            <th>Program Coordinator</th>
+	            <th>Opted Days </th>
+	            <th>Remarks</th>
+	        </tr>
+	    </thead>
+	    <tbody>
+		    <?php /* if(count($module) > 0){ 
+		    	$cnt = 1;
+		    	?>    
+		        <?php foreach($module as $value){ 
+		        	?> 
+		            <tr>
+		            	<td><input type="checkbox" value="<?php echo $cnt.'@'.$value['id']; ?>" name="single_check" id="single_check<?php echo $cnt; ?>"/></td>
+		            	<td><?php echo $value['modules_allowed']; ?></td>
+		            	<td><?php echo $completed_modules_name ; //$value['modules_completed']; ?></td>
+		            	<td><?php echo "Active"; ?></td>
+		            	<td><?php echo $value['first_name'].' '.$value['last_name']; ?></td>
+		            	<td><?php echo $value['email']; ?></td>
+		            	<td><?php echo ""; ?></td>
+		            	<td><?php echo $value['program_coordinator']; ?></td>
+		            	<td><?php 
+		            		if(!empty(trim($value['available_batch_opt']))){
+				                echo $value['available_batch_opt'];
+				            }else{
+				                echo strtolower(date('D',strtotime($value['course_batch_date']))); 
+				            } 
+				            ?>
+				        </td>
+		            	<td><?php echo $value['remarks']; ?></td>
+		            </tr>
+		            
+		        <?php $cnt++; }
+
+		    }else{
+		    	echo '<tr><td colspan="10"><center> <h3>No Record Found</h3> </center></td> </tr>';
+		    } */ ?>
+	    </tbody>
+    </table>
+    <?php //echo LinkPager::widget(['pagination' => $pages]); ?>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@7.28.4/dist/sweetalert2.all.min.js"></script>
+<script>
+	$(document).ready(function(){
+		$("#checkAll").click(function(){
+			$('input:checkbox').not(this).prop('checked', this.checked);
+		});
+	});
+
+	//For get batch data
+	function get_batchs_data(){
+		var all_ids = [];
+		var students_id = [];
+		$('input:checkbox[name=single_check]').each(function(){    
+		    if($(this).is(':checked')){
+		    	var splt_val = '';
+		    	splt_val = $(this).val().split('@');
+		    	all_ids.push(splt_val[0]);
+		    	students_id.push(splt_val[1]);
+		    }
+		});
+		if(all_ids.length > 0){
+			$.ajax({
+	            url: '<?php echo Url::to(['dv-batch-allotment/display_batch_list'])?>',
+	            type: 'POST',
+	            data:{
+	                total_students:all_ids.length,
+	                batch_allotment_details:$('#batch_allotment_details').val(),
+	                all_students_id:students_id.toString()
+	            },
+	            success: function(data){}
+	        });
+		}
+	}//End of JS:get_batchs_data()//
+	
+	//For Reset Data
+	function reset_data(){
+		var ids = $('#students_id').val();
+		if(ids!=''){
+			$.ajax({
+	            url: '<?php echo Url::to(['dv-batch-allotment/display_students_list'])?>',
+	            type: 'POST',
+	            data:{
+	                students_id:ids,
+	                batch_allotment_details:$('#batch_allotment_details').val(),
+	                completed_modules_name:$('#completed_modules_name').val()
+	            },
+	            success: function(data){}
+	        });
+		}
+	}//End of JS:reset_data()//
+</script>

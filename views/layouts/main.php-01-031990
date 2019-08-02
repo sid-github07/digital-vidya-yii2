@@ -1,0 +1,1801 @@
+<?php
+use yii\helpers\Html;
+use yii\helpers\ArrayHelper;
+#use app\models\DvParticipantModulesSession;
+
+/* @var $this \yii\web\View */
+/* @var $content string */
+
+
+if (Yii::$app->controller->action->id === 'login') { 
+/**
+ * Do not use this code in your template. Remove it. 
+ * Instead, use the code  $this->layout = '//main-login'; in your controller.
+ */
+    echo $this->render(
+        'main-login',
+        ['content' => $content]
+    );
+} else {
+
+    if (class_exists('backend\assets\AppAsset')) {
+        backend\assets\AppAsset::register($this);
+    } else {
+        app\assets\AppAsset::register($this);
+    }
+
+    dmstr\web\AdminLteAsset::register($this);
+
+    $directoryAsset = Yii::$app->assetManager->getPublishedUrl('@vendor/almasaeed2010/adminlte/dist');
+    ?>
+    <?php $this->beginPage() ?>
+    <!DOCTYPE html>
+    <html lang="<?= Yii::$app->language ?>">
+    <head>
+        <meta charset="<?= Yii::$app->charset ?>"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <?= Html::csrfMetaTags() ?>
+        <title><?= Html::encode($this->title) ?></title>
+        <?php $this->head() ?>
+        <style type="text/css"> .rowdisable > td > a {display:none !important;} </style>
+        <link rel="shortcut icon" href="<?=Yii::$app->params['yii_url']?>/favicon.ico" />
+    </head>
+    <body class="hold-transition skin-blue sidebar-mini">
+    <?php $this->beginBody() ?>
+    <div class="wrapper">
+
+        <?= $this->render(
+            'header.php',
+            ['directoryAsset' => $directoryAsset]
+        ) ?>
+
+        <?= $this->render(
+            'left.php',
+            ['directoryAsset' => $directoryAsset]
+        )
+        ?>
+
+        <?= $this->render(
+            'content.php',
+            ['content' => $content, 'directoryAsset' => $directoryAsset]
+        ) ?>
+
+    </div>
+<div style="display: none" class="loading_custom" id="loading_custom">Please wait while Loading&#8230;</div>
+<button onclick="topFunction()" id="myBtn" title="Go to top"><i class="fa fa-fw fa-chevron-up"></i></button>
+
+<?php $this->endBody() ?>
+<script src="//code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
+<script src="http://getbootstrap.com/2.3.2/assets/js/bootstrap-tooltip.js"></script>
+<?php // for Module Edit page only
+$controller_name = Yii::$app->controller->id;
+$controller_function = Yii::$app->controller->action->id;
+$add_count = 2;
+if(($controller_name == 'dv-delivery') && ($controller_function == 'edit')){
+    $total_session = 0;
+    $mid = $_GET['id'];
+    $total_session_2 = Yii::$app->db->createCommand("SELECT meta_value FROM assist_participant_module_meta WHERE mid = '$mid' AND meta_key = 'all_sessions' ")->queryOne(); 
+    //$total_session = (int)$total_session_2;
+    $total_session = $total_session_2['meta_value'];
+    if($total_session  == 0){
+        $add_count = 1;
+    } elseif($total_session > 1){
+        $add_count = $total_session+1;
+    } else{
+    }
+    $add_count; 
+}
+// for Module Edit page only
+?>
+
+<script>
+// When the user scrolls down 20px from the top of the document, show the button
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+    if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+        document.getElementById("myBtn").style.display = "block";
+    } else {
+        document.getElementById("myBtn").style.display = "none";
+    }
+}
+
+// When the user clicks on the button, scroll to the top of the document
+function topFunction() {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+}
+</script>
+
+<script type="text/javascript">
+    var exception_closures_counter = 0;
+$("document").ready(function(){
+
+    $(".field-dvregistration-available_batch_opt").css("display","none");
+    $('#date_for_daily').datepicker({dateFormat: 'yy-mm-dd'});
+    $('#weekly_date_to').datepicker({dateFormat: 'yy-mm-dd'});
+    $('#weekly_date_from').datepicker({dateFormat: 'yy-mm-dd'});
+
+    $(document).on("click", ".enable_disable_target", function(){
+        var month_year = $(this).attr('id');
+        month_year = month_year.split("_");
+        var month = month_year[2];
+        var year = month_year[3];
+        var is_checked = $(this).prop('checked') ? 1 : 0;
+        
+        $.ajax({
+            url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/enable_disable_target') ?>',
+            type: 'POST',
+            data: { month:month,year:year,is_checked:is_checked},
+            success: function(data){
+
+                if (is_checked == 1) {
+                    $(".target_status[for_month='"+parseInt(month)+"_"+year+"'][status='0']").removeClass("label-danger");
+                    $(".target_status[for_month='"+parseInt(month)+"_"+year+"'][status='0']").addClass("label-success");
+                    $(".target_status[for_month='"+parseInt(month)+"_"+year+"'][status='0']").text("Active");
+                    $(".target_status[for_month='"+parseInt(month)+"_"+year+"'][status='0']").attr("status","1");
+                    $("label[for='disable_month_"+parseInt(month)+"_"+year+"']").text("Active");
+                } else {
+                    $(".target_status[for_month='"+parseInt(month)+"_"+year+"'][status='1']").removeClass("label-success");
+                    $(".target_status[for_month='"+parseInt(month)+"_"+year+"'][status='1']").addClass("label-danger");
+                    $(".target_status[for_month='"+parseInt(month)+"_"+year+"'][status='1']").text("In-Active");
+                    $(".target_status[for_month='"+parseInt(month)+"_"+year+"'][status='1']").attr("status","0");
+                    $("label[for='disable_month_"+parseInt(month)+"_"+year+"']").text("In-Active");
+                }
+            }
+        });
+        
+    });
+
+    $(document).on("change", "#sales_managers", function(){
+        var sales_manager = $(this).val();
+        if (sales_manager != '') {
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-reports/get_executive_of_manager') ?>',
+                type: 'POST',
+                data: { sales_manager:sales_manager},
+                success: function(data){
+                    var executive = JSON.parse(data);
+                    $("#executives").html('<option value="">Select Executive</option>');
+                    $.each(executive, function(key, val) {
+                        $("#executives").append('<option value="'+val.id+'">'+val.first_name + " " + val.last_name +'</option>');
+                    });
+                    $("#executives").append('<option value="'+sales_manager+'">Manager Self</option>');
+                }
+            });
+        }
+    });
+        
+    $("#opt_for_3_months").click(function(){
+        if($(this).prop('checked')){
+            $(".field-dvregistration-available_batch_opt").css('display','block');
+        }else{
+            $(".field-dvregistration-available_batch_opt").css('display','none');
+        }
+    });
+
+    $('[data-toggle="tooltip"]').tooltip();
+    $(document).on('mouseover', '[data-toggle="tooltip"]', function(){
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+
+    var counter = <?php echo $add_count; ?>;
+    if(counter>2){
+        $('#removeButton').show();
+    }
+
+    $(document).on('click', '#addButton', function(){
+        $('#removeButton').show();
+        $('#fend_date').remove();
+        <?php $moduleid = Yii::$app->request->get('id'); 
+            if(empty($moduleid)){
+                $module_id = '';
+            } else{
+                $module_id = ', module_id:'.$moduleid;
+            } ?>
+        var totalsess = $('#total_session').attr("data-total-session");
+        var pre_date = $('.session'+totalsess+' input').val();
+        var counter = parseInt(totalsess) + 1;
+        $('#removeButton').show();
+        if(counter>25){
+            alert("Only 25 Session allow");
+            return false;
+        }
+        $("#loading_custom").show();
+        $("#total_session").replaceWith('<h3 class="blue_color" id="total_session" data-total-session="'+counter+'">No. of Sessions: '+counter+' </h3>');
+        $("#all_sessions").replaceWith('<input id="all_sessions" name="all_sessions" value="'+counter+'" type="hidden">');
+        var newTextBoxDiv = $(document.createElement('div')).attr("id", 'TextBoxDiv' + counter);
+
+        $.ajax({ url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/add_session') ?>',
+                    type: 'POST',
+                    data: { counter:counter,pre_date:pre_date<?php echo $module_id; ?>},
+                    success: function(data){
+                        newTextBoxDiv.after().html(data);
+                       // $("#loading_custom").hide();
+                        $.ajax({ url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/add_session_enddate') ?>',
+                            type: 'POST',
+                            data: { counter:counter,pre_date:pre_date<?php echo $module_id; ?>},
+                            success: function(data){                                
+                                $("#module_end_date").replaceWith(data);
+                                $("#loading_custom").hide();
+                            }
+                        });
+                    }
+                });
+
+        newTextBoxDiv.appendTo("#TextBoxesGroup");
+        counter++;
+    });
+
+    $(document).on('click', '#removeButton', function(){
+        var counter = $('#total_session').attr("data-total-session");
+        var tcounter = $('div.hide').attr("data-totalsession");
+        if(counter>tcounter){
+            var n_counter = parseInt(counter) - 1;
+            $("#total_session").replaceWith('<h3 class="blue_color" id="total_session" data-total-session="'+n_counter+'">No. of Sessions: '+n_counter+' </h3>');
+            $("#all_sessions").replaceWith('<input id="all_sessions" name="all_sessions" value="'+n_counter+'" type="hidden">');
+            var pre_date = $('#session_'+n_counter).val();
+            $("#fend_date").replaceWith('<input name="fend_date" id="fend_date" value="'+pre_date+'" type="hidden">');
+            $("#module_end_date").replaceWith('<input id="module_end_date" class="form-control hasDatepicker" title="" placeholder="End Date" data-toggle="tooltip" readonly="readonly" data-placement="top" aria-required="true" data-original-title="End Date" aria-invalid="false" value="'+pre_date+'">');
+            $("#TextBoxDiv" + counter).remove();
+            if(n_counter==tcounter){
+                $('#removeButton').hide();
+            }
+        }
+    });
+
+    $(document).on('click', '#addButton2', function(){
+        var totalsess = $('#total_session').attr("data-total-session");
+        var pre_date = $('#session_'+totalsess).val();
+        <?php $moduleid = Yii::$app->request->get('id'); 
+            if(empty($moduleid)){
+                $module_id = '';
+            } else{
+                $module_id = ', module_id:'.$moduleid;
+            } ?>
+        $('#fend_date').remove();
+        var counter = parseInt(totalsess) + 2;
+        $('#removeButton2').show();
+        if(counter>50){
+            alert("Only 50 Session allow");
+            return false;
+        }
+        $("#loading_custom").show();
+        $("#total_session").replaceWith('<h3 class="blue_color" id="total_session" data-total-session="'+counter+'">No. of Sessions: '+counter+' </h3>');
+        $("#all_sessions").replaceWith('<input id="all_sessions" name="all_sessions" value="'+counter+'" type="hidden">');
+        var newTextBoxDiv = $(document.createElement('div')).attr("id", 'TextBoxDiv' + totalsess);
+
+        $.ajax({ url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/add_session2') ?>',
+                    type: 'POST',
+                    data: { counter:totalsess,pre_date:pre_date<?php echo $module_id; ?>},
+                    success: function(data){
+                        newTextBoxDiv.after().html(data);
+                        $("#loading_custom").hide();
+                        }
+                    });
+
+        newTextBoxDiv.appendTo("#TextBoxesGroup");
+        counter++;
+    });
+
+    $(document).on('click', '#removeButton2', function(){
+        var counter = $('#total_session').attr("data-total-session");
+        var tcounter = $('div.hide').attr("data-totalsession");
+        if(counter == tcounter){
+            // in the case of equal
+        } else {
+            var n_counter = parseInt(counter) - 2; 
+            $("#total_session").replaceWith('<h3 class="blue_color" id="total_session" data-total-session="'+n_counter+'">No. of Sessions: '+n_counter+' </h3>');
+            $("#all_sessions").replaceWith('<input id="all_sessions" name="all_sessions" value="'+n_counter+'" type="hidden">');
+            $("#TextBoxDiv" + n_counter).remove();
+            if(n_counter==tcounter){
+                $('#removeButton2').hide();
+            }
+        }
+    });
+    // add new sessions upto 20
+
+    // add new Installment  uptp 6
+    var counter1 = 3;
+    if(counter1>3){
+        $('#remove_Button').show();
+    }
+    $("#dvregistration-is_pdc").click(function(){
+        if($(this).prop('checked')){
+            $(".pdc_ref_form_field").css('display','block');
+        }else{
+            $(".pdc_ref_form_field").css('display','none');
+        }
+    });
+    $("#add_Button").click(function(){
+        $('#remove_Button').show();
+        if(counter1>6){
+            alert("Only 6 Installments allow");
+            return false;
+        }  
+    //var newTextBoxDiv = $(document.createElement('div')).attr("id", 'TextBoxDiv' + counter1);
+    var newTextBoxDiv = $('<div id="TextBoxDiv'+counter1+'" class="form-group" style="float:left;width:100%;">');
+                
+    newTextBoxDiv.after().html('<div class="form-group col-md-4">\
+            <input id="insamt_'+ counter1 +'" class="form-control ins_amt_ins" name="installment['+ counter1 +'][amt]" required="required"  type="text" placeholder="Installment no: '+ counter1 +' (Committed Amount)" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Installment no: '+ counter1 +' (Committed Amount)">\
+                    <em>(including Service Tax)</em>\
+            <div class="help-block"></div>\
+        </div>\
+        <div class="form-group col-md-4">\
+            <input autocomplete="off" id="insdate_'+ counter1 +'"  class="form-control" name="installment['+ counter1 +'][date]" required="required"  type="text" placeholder="Installment no: '+ counter1 +' (Committed Date)" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Installment no: '+ counter1 +' (Committed Date)">\
+            <div class="help-block"></div>\
+        </div>\
+        <div class="form-group col-md-4">\
+            <input id="insref_'+ counter1 +'"  class="form-control pdc_ref_number" name="installment['+ counter1 +'][ref_number]" type="text" placeholder="Installment no: '+ counter1 +' (Cheque Reference Number)" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Installment no: '+ counter1 +' (Cheque Reference Number)">\
+            <div class="help-block">\
+        </div>');
+            
+    newTextBoxDiv.appendTo("#installmentboxe");
+    if($("#dvregistration-is_pdc").prop('checked')){
+        $(".pdc_ref_form_field").css('display','block');
+    }else{
+        $(".pdc_ref_form_field").css('display','none');
+    }
+
+    counter1++;
+    });
+
+    $("#remove_Button").click(function(){
+        if(counter1==4){
+            $('#remove_Button').hide();
+        }
+       if(counter1>2){
+            counter1--;
+            $("#TextBoxDiv" + counter1).remove();
+       }
+    });
+    // add new Installment  uptp 6
+
+
+    $('#start_date').datepicker();
+    $('#dvparticipantmodules-stiming').timepicker({
+            timeFormat: 'h:mm p',
+            interval: 30,
+            minTime: '10',
+            maxTime: '09:30pm',
+        //  defaultTime: '11',
+            startTime: '10:00',
+            dynamic: false,
+            dropdown: true,
+            scrollbar: true
+         });
+    $('#dvparticipantmodules-etiming').timepicker({
+            timeFormat: 'h:mm p',
+            interval: 30,
+            minTime: '10',
+            maxTime: '09:30pm',
+        //  defaultTime: '11',
+            startTime: '10:00',
+            dynamic: false,
+            dropdown: true,
+            scrollbar: true
+         });
+
+<?php // for Module Edit page only
+$controller_name = Yii::$app->controller->id;
+$controller_function = Yii::$app->controller->action->id; ?>
+    $('#dvparticipantmodules-start_date').datepicker({
+        dateFormat: 'dd-mm-yy',<?php
+        if(( $controller_name == 'dv-delivery') && ($controller_function != 'edit')){ ?>
+            minDate: 0,
+        <?php }
+
+        // Get Start Date
+        $module_id = Yii::$app->request->get('id');
+        $session_1_date = Yii::$app->db->createCommand("SELECT start_date FROM assist_participant_modules WHERE id = '$module_id' ")->queryOne();
+        $session_one_date = $session_1_date['start_date'];    ?>
+            onSelect: function (date){
+                var prev_date = '<?php echo $session_one_date; ?>';
+                var sdate = $(this).val();                
+            if(prev_date != sdate){ // condition to check the same date
+                $('#reschedule_num').val('1');
+                $("#session_1").val(sdate);
+                $("#addButton").hide();
+                $(document).ajaxStart(function(){
+                    $("#loading_custom").show();
+                });
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/get_day') ?>',
+                type: 'POST',
+                data: { sdate: sdate},
+                success: function(data){
+                    $("#dvparticipantmodules-day").replaceWith(data);
+                    $.ajax({
+                        url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/get_weeks') ?>',
+                        type: 'POST',
+                        data: { day_id:sdate},
+                        success: function(data){
+                            $("#dvparticipantmodules-type").replaceWith(data);
+                            $("#TextBoxesGroup").replaceWith("<div id='TextBoxesGroup'> </div>");
+                            $('#confirm-submit .modal-body .session_error').replaceWith('<div class="session_error"></div>');
+                            $("#loading_custom").hide();
+                        }
+                    });
+                }
+            });
+          }  // condition to check the same date
+        }
+    });
+
+    
+    // on change Number of weeks
+    $(document).on('change', '#dvparticipantmodules-type', function(){        
+        if(this.value != ''){            
+            var type_id = $(this).val();
+            $("#addButton").show();
+            $("#addButton2").show();
+            <?php $moduleid = Yii::$app->request->get('id'); 
+            if(empty($moduleid)){
+                $module_id = '';
+            } else{
+                $module_id = ', module_id:'.$moduleid;
+            } ?>
+            var start_date = $('#dvparticipantmodules-start_date').val();
+            var Sday = $('#dvparticipantmodules-day').val();
+            if(start_date == ''){
+                $("#dvparticipantmodules-start_date").focus();
+            } else {
+            $("#loading_custom").show();
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/get_session') ?>',
+                type: 'POST',
+                data: { type_id: type_id,start_date:start_date,Sday:Sday<?php echo $module_id ?>},
+                success: function(data){
+                    $("#TextBoxesGroup").replaceWith(data);
+                        $.ajax({
+                            url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/get_session_enddate') ?>',
+                            type: 'POST',
+                            data: { type_id: type_id,start_date:start_date,Sday:Sday<?php echo $module_id ?>},
+                            success: function(data){
+                                $("#module_end_date").replaceWith(data);
+                                $("#loading_custom").hide();
+                            }
+                        });
+                    //$("#loading_custom").hide();
+                }
+            });
+
+          }
+        }
+    });
+
+
+    // on change Day
+    $(document).on('change', '#dvparticipantmodules-day', function(){    
+        if(this.value != ''){            
+            var day_id = $(this).val();
+            if(day_id=='tuesday-thursday'){
+                $('#addButton').attr("id","addButton2");
+                $('#removeButton').attr("id","removeButton2");
+            } else {
+                $('#addButton2').attr("id","addButton");
+                $('#removeButton2').attr("id","removeButton");
+            }
+
+            $(document).ajaxStart(function(){
+                $("#loading_custom").show();
+            });
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/get_weeks') ?>',
+                type: 'POST',
+                data: { day_id:day_id},
+                success: function(data){
+                    $("#dvparticipantmodules-type").replaceWith(data);
+                    $("#TextBoxesGroup").replaceWith("<div id='TextBoxesGroup'> </div>");
+                    $("#addButton").hide();
+                    $("#loading_custom").hide();
+                }
+            });
+        }
+    });
+
+    <?php /* // disable the session one and get their date from start date ?>
+
+    $(document).on('click', '#session_1', function(){
+        $('#session_1').datepicker({
+            dateFormat:'dd-mm-yy',<?php
+        //if(( $controller_name == 'dv-delivery') && ($controller_function != 'edit')){ ?>
+            minDate: 0,
+        <?php //} ?>
+            onSelect: function (date){
+                var sdate = $(this).val();
+                $("#dvparticipantmodules-start_date").val(sdate);
+            }}).focus();
+    }); <?php */ ?>
+
+        <?php $count = 2; for($i = 1; $i<=39; $i++){ // create date picker from 2 to 40 dv-delivery/create_module
+            ?>$(document).on('click', '#session_<?php echo $count; ?>', function(){
+                var module_id = $('#edit_module_form').val();
+                $('#session_<?php echo $count; ?>').datepicker({
+                    dateFormat:'dd-mm-yy', minDate: 0,
+    <?php if(( $controller_name == 'dv-delivery') && ($controller_function == 'edit')){ // edit case of module  
+    
+    // Get Start Date
+    $session_key_val = 'session'.$count;
+    $moduleid = Yii::$app->request->get('id'); 
+    $session_date = Yii::$app->db->createCommand("SELECT meta_value FROM assist_participant_module_meta WHERE mid = '$moduleid' AND meta_key = '$session_key_val' ")->queryOne();
+    if(!empty($session_date['meta_value'])){
+        $session_date = $session_date['meta_value'];
+    } else {
+        $session_date = '';
+    }
+    
+        ?>
+                    onSelect: function (date){
+                var prev_date = '<?php echo $session_date; ?>';                
+                
+                if(prev_date != date){ // condition to check the same date                        
+                       $('.trainer_cordi_notify input[type=checkbox]').replaceWith('<input name="trainer_cordi_notify" value="1" type="checkbox" checked="checked">');
+                       $('.trainer_c_notify input[type=checkbox]').replaceWith('<input name="trainer_c_notify" value="1" type="checkbox" checked="checked">');
+
+                        $.ajax({ url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/check_date') ?>',
+                                type: 'POST',
+                                data: { current_date: date, module_id:module_id},
+                                success: function(val){
+                                    if(val == '0'){ 
+                                        alert('The Date '+date+' is already Used');
+                                        $('#session_<?php echo $count; ?>').focus();
+                                        $('#update_module').addClass('hide');
+                                    } else {  
+                                        $('#reschedule_num').val('1');
+                                        $('#update_module').removeClass('hide');
+                                        var total_session = $('#all_sessions').val();
+                                        var last_date = $('#session_'+total_session).val();
+                                        $("#fend_date").replaceWith('<input name="fend_date" id="fend_date" value="'+last_date+'" type="hidden">');
+                                        $("#module_end_date").replaceWith('<input id="module_end_date" class="form-control hasDatepicker" title="" placeholder="End Date" data-toggle="tooltip" readonly="readonly" data-placement="top" aria-required="true" data-original-title="End Date" aria-invalid="false" value="'+last_date+'">');
+                                    }   
+                                    $("#loading_custom").hide();                                 
+                                }
+                            });
+                    }   // condition to check the same date         
+                        } // on select
+                    <?php } else { // create case of module ?>
+                        onSelect: function (date){
+                            var total_session = $('#all_sessions').val();
+                            var last_date = $('#session_'+total_session).val();
+                            $("#fend_date").replaceWith('<input name="fend_date" id="fend_date" value="'+last_date+'" type="hidden">');
+                            $("#module_end_date").replaceWith('<input id="module_end_date" class="form-control hasDatepicker" title="" placeholder="End Date" data-toggle="tooltip" readonly="readonly" data-placement="top" aria-required="true" data-original-title="End Date" aria-invalid="false" value="'+last_date+'">');
+                        }
+                <?php  } ?>
+                }).focus();
+            });
+            <?php $count++;
+        }
+
+        $count = 2; for($i = 1; $i<=5; $i++){ // create date picker from 2 to 6 on dv-registration/create
+            ?>$(document).on('click', '#insdate_<?php echo $count; ?>', function(){
+                var date_cnt = "<?= $count ?>";
+                if(date_cnt > 2){
+                    date_cnt = date_cnt - 1;
+                    var date_vals = $('#insdate_'+date_cnt).datepicker('getDate', '+1d');
+                    date_vals.setDate(date_vals.getDate()+1); 
+                    $('#insdate_<?php echo $count; ?>').datepicker({dateFormat:'dd-mm-yy',  minDate: date_vals}).focus();
+                }else{
+                    $('#insdate_<?php echo $count; ?>').datepicker({dateFormat:'dd-mm-yy',  minDate: 1}).focus();
+                }
+                //$('#insdate_<?php echo $count; ?>').datepicker({dateFormat:'dd-mm-yy'}).focus();
+            });
+            <?php
+        $count++;
+        } ?>
+
+        $('#end-date').datepicker();
+        $('#date_2').datepicker({ dateFormat: 'dd-mm-yy' });
+        $('#date_3').datepicker({ dateFormat: 'dd-mm-yy' });
+        $('.datepicker_dob').datepicker({ dateFormat: 'dd-mm-yy' });
+        $('.datepicker_gst').datepicker({ dateFormat: 'yy-mm-dd',minDate:'0d' });
+        $('.datepicker_jd').datepicker({ dateFormat: 'dd-mm-yy' });
+
+        $('#fdate').datepicker({
+            dateFormat: 'dd-mm-yy',
+            minDate:'0d',
+            beforeShowDay: $.datepicker.noWeekends,           
+        });
+
+       $('#edate').datepicker({
+            dateFormat: 'dd-mm-yy',
+            minDate:'0d',
+            beforeShowDay: $.datepicker.noWeekends,
+        });
+       
+        $('#edate').on('change', function(){
+            var fdate = $('#fdate').val();
+            var edate = $('#edate').val();
+                if(edate < fdate){
+                    alert('To Date Cannot Be Less Than From Date');
+                    edate.val('');
+                }
+        });
+
+        var closures_counter = 1;
+
+        $ ("#monthly_incentive_rate #add_closures_range").click(function() {
+            $("#remove_closures_button").show();
+
+            var last_max_closures = parseInt($("#max_closures_"+(parseInt(closures_counter)-1)).val()) + 1;
+            var last_min_closures = $("#min_closures_"+(parseInt(closures_counter)-1)).val();
+
+            for (var i=0; i<=closures_counter; i++) {
+                var min_closures = $("#min_closures_"+i).val();
+                var max_closures = $("#max_closures_"+i).val();
+                if (max_closures == "" || max_closures == "undefined" || min_closures == "" || min_closures == "undefined") {
+                    $("#max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closures.");
+                    return false;
+                }
+
+                if (parseInt($("#min_closures_"+i).val()) >= parseInt($("#max_closures_"+i).val())) {
+                    $("#max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closures.");
+                    return false;
+                }
+            }
+
+            var newTextBoxDiv = $('<div id="TextBoxDiv'+closures_counter+'" style="float:left;width:100%;">');
+
+            newTextBoxDiv.after().html('<div class="form-group col-md-4">\
+            <input id="min_closures_'+ closures_counter +'" class="form-control" name="DvManageMonthlyIncentiveRate[min_closures][]" required="required"  type="number" placeholder="Min Closures" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Min Closures" readonly value="' + last_max_closures + '">\
+        </div>\
+        <div class="form-group col-md-4">\
+            <input autocomplete="off" id="max_closures_'+ closures_counter +'"  class="form-control max_closures_val" name="DvManageMonthlyIncentiveRate[max_closures][]" required="required"  type="number" placeholder="Max Closures" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Max Closures">\
+        </div>\
+        <div class="form-group col-md-4">\
+            <input id="rate'+ closures_counter +'"  class="form-control pdc_ref_number" name="DvManageMonthlyIncentiveRate[rate][]" required="required" type="number" placeholder="Rate (%)" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Rate (%)">\
+        </div>');
+
+            newTextBoxDiv.appendTo("#closures_rate_box");
+
+            if (closures_counter > 1) {
+                $("#remove_closures_button").show();
+            }
+            closures_counter++;
+        });
+
+        $(document).on("blur", "#monthly_incentive_rate .max_closures_val", function(){
+            var max_closures = $(this).val();
+            var max_closures_tx_bx_id = $(this).attr("id");
+            var current_mx_rev_tx_bx_id = max_closures_tx_bx_id.split("max_closures_")[1];
+            var last_min_closures = $("#min_closures_"+(parseInt(current_mx_rev_tx_bx_id))).val();
+            $("#min_closures_"+(parseInt(current_mx_rev_tx_bx_id)+1)).val(max_closures);
+            
+            if (max_closures == "" || max_closures == "undefined" || last_min_closures == "" || last_min_closures == "undefined") {
+                $(this).val('');
+                alert("Max Closures must be greather than Min Closures.");
+                return false;
+            }
+            
+            for (var i=0; i<=closures_counter; i++) {
+                if (parseInt($("#min_closures_"+i).val()) >= parseInt($("#max_closures_"+i).val())) {
+                    $("#max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closuress.");
+                    return false;
+                }
+            }
+        });
+
+        $("#monthly_incentive_rate #remove_closures_button").click(function(){
+            if(closures_counter>1){
+                closures_counter--;
+                $("#TextBoxDiv" + closures_counter).remove();
+            }
+            if(closures_counter==1){
+                $('#remove_closures_button').hide();
+            }
+        });
+        /* * * * * * * * * * * * * * * * * * * * */
+        $ ("#full_payment_incentive_rate #add_closures_range").click(function() {
+            $("#remove_closures_button").show();
+
+            var last_max_closures = parseInt($("#max_closures_"+(parseInt(closures_counter)-1)).val()) + 1;
+            var last_min_closures = $("#min_closures_"+(parseInt(closures_counter)-1)).val();
+
+            for (var i=0; i<=closures_counter; i++) {
+                var min_closures = $("#min_closures_"+i).val();
+                var max_closures = $("#max_closures_"+i).val();
+                if (max_closures == "" || max_closures == "undefined" || min_closures == "" || min_closures == "undefined") {
+                    $("#max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closures.");
+                    return false;
+                }
+
+                if (parseInt($("#min_closures_"+i).val()) >= parseInt($("#max_closures_"+i).val())) {
+                    $("#max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closures.");
+                    return false;
+                }
+            }
+
+            var newTextBoxDiv = $('<div id="TextBoxDiv'+closures_counter+'" style="float:left;width:100%;">');
+
+            newTextBoxDiv.after().html('<div class="form-group col-md-4">\
+            <input id="min_closures_'+ closures_counter +'" class="form-control" name="DvManageFullPaymentIncentiveRate[min_closures][]" required="required"  type="number" placeholder="Min Closures" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Min Closures" readonly value="' + last_max_closures + '">\
+        </div>\
+        <div class="form-group col-md-4">\
+            <input autocomplete="off" id="max_closures_'+ closures_counter +'"  class="form-control max_closures_val" name="DvManageFullPaymentIncentiveRate[max_closures][]" required="required"  type="number" placeholder="Max Closures" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Max Closures">\
+        </div>\
+        <div class="form-group col-md-4">\
+            <input id="rate'+ closures_counter +'"  class="form-control pdc_ref_number" name="DvManageFullPaymentIncentiveRate[rate][]" required="required" type="number" placeholder="Rate (%)" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Rate (%)">\
+        </div>');
+
+            newTextBoxDiv.appendTo("#closures_rate_box");
+
+            if (closures_counter > 1) {
+                $("#remove_closures_button").show();
+            }
+            closures_counter++;
+        });
+
+        $(document).on("blur", "#full_payment_incentive_rate .max_closures_val", function(){
+            var max_closures = $(this).val();
+            var max_closures_tx_bx_id = $(this).attr("id");
+            var current_mx_rev_tx_bx_id = max_closures_tx_bx_id.split("max_closures_")[1];
+            var last_min_closures = $("#min_closures_"+(parseInt(current_mx_rev_tx_bx_id))).val();
+            $("#min_closures_"+(parseInt(current_mx_rev_tx_bx_id)+1)).val(max_closures);
+            
+            if (max_closures == "" || max_closures == "undefined" || last_min_closures == "" || last_min_closures == "undefined") {
+                $(this).val('');
+                alert("Max Closures must be greather than Min Closures.");
+                return false;
+            }
+            
+            for (var i=0; i<=closures_counter; i++) {
+                if (parseInt($("#min_closures_"+i).val()) >= parseInt($("#max_closures_"+i).val())) {
+                    $("#max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closuress.");
+                    return false;
+                }
+            }
+        });
+
+        $("#full_payment_incentive_rate #remove_closures_button").click(function(){
+            if(closures_counter>1){
+                closures_counter--;
+                $("#TextBoxDiv" + closures_counter).remove();
+            }
+            if(closures_counter==1){
+                $('#remove_closures_button').hide();
+            }
+        });
+        /* * * * * * * * * * * * * * * * * * * * */
+        $(document).on("click","#team_member_exception_rate #add_closures_range", function() {
+            $("#remove_closures_button").show();
+
+            var last_max_closures = parseInt($("#max_closures_"+(parseInt(exception_closures_counter)-1)).val()) + 1;
+            var last_min_closures = $("#min_closures_"+(parseInt(exception_closures_counter)-1)).val();
+
+            for (var i=0; i<=exception_closures_counter; i++) {
+                var min_closures = $("#min_closures_"+i).val();
+                var max_closures = $("#max_closures_"+i).val();
+                if (max_closures == "" || max_closures == "undefined" || min_closures == "" || min_closures == "undefined") {
+                    $("#max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closures.");
+                    return false;
+                }
+
+                if (parseInt($("#min_closures_"+i).val()) >= parseInt($("#max_closures_"+i).val())) {
+                    $("#max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closures.");
+                    return false;
+                }
+            }
+
+            var newTextBoxDiv = $('<div id="TextBoxDiv'+exception_closures_counter+'" style="float:left;width:100%;">');
+
+            newTextBoxDiv.after().html('<div class="form-group col-md-4">\
+            <input id="min_closures_'+ exception_closures_counter +'" class="form-control" name="DvManageMonthlyIncentiveExceptionRate[min_closures][]" required="required"  type="number" placeholder="Min Closures" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Min Closures" readonly value="' + last_max_closures + '">\
+        </div>\
+        <div class="form-group col-md-4">\
+            <input autocomplete="off" id="max_closures_'+ exception_closures_counter +'"  class="form-control max_closures_val" name="DvManageMonthlyIncentiveExceptionRate[max_closures][]" required="required"  type="number" placeholder="Max Closures" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Max Closures">\
+        </div>\
+        <div class="form-group col-md-4">\
+            <input id="rate'+ exception_closures_counter +'"  class="form-control pdc_ref_number" name="DvManageMonthlyIncentiveExceptionRate[rate][]" required="required" type="number" placeholder="Rate (%)" data-toggle="tooltip" data-placement="top" aria-required="true" data-original-title="Rate (%)">\
+        </div>');
+
+            newTextBoxDiv.appendTo("#min_max_rate_container");
+
+            if (exception_closures_counter > 1) {
+                $("#remove_closures_button").show();
+            }
+            exception_closures_counter++;
+        });
+
+        $(document).on("blur", "#team_member_exception_rate .max_closures_val", function(){
+            var max_closures = $(this).val();
+            var max_closures_tx_bx_id = $(this).attr("id");
+            var current_mx_rev_tx_bx_id = max_closures_tx_bx_id.split("max_closures_")[1];
+            var last_min_closures = $("#min_closures_"+(parseInt(current_mx_rev_tx_bx_id))).val();
+            $("#min_closures_"+(parseInt(current_mx_rev_tx_bx_id)+1)).val(max_closures);
+            
+            if (max_closures == "" || max_closures == "undefined" || last_min_closures == "" || last_min_closures == "undefined") {
+                $(this).val('');
+                alert("Max Closures must be greather than Min Closures.");
+                return false;
+            }
+            
+            for (var i=0; i<=exception_closures_counter; i++) {
+                if (parseInt($("#min_closures_"+i).val()) >= parseInt($("#max_closures_"+i).val())) {
+                    $("#max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closuress.");
+                    return false;
+                }
+            }
+        });
+
+        $(document).on("click", "#team_member_exception_rate #remove_closures_button", function(){
+            if(exception_closures_counter>1){
+                exception_closures_counter--;
+                $("#TextBoxDiv" + exception_closures_counter).remove();
+            }
+            if(exception_closures_counter==1){
+                $('#remove_closures_button').hide();
+            }
+        });
+
+        var trs = $("tr");
+        trs.each(function(){
+            /* 
+             * Append text " - Exception Rate" after DM & DA if any month contain Exception of incentive for any executive
+             *   */
+            $("#"+$(this).attr('is_exception')).html(" - Exception Rate");
+        });
+
+        $(document).on("click", "#check_current_exception_rate", function() {
+            var months = $("#dvmanagemonthlyincentiveexceptionrate-month").val();
+            var domain = $("#dvmanagemonthlyincentiveexceptionrate-domain").val();
+            var years = $("#dvmanagemonthlyincentiveexceptionrate-years").val();
+            $("#DvManageMonthlyIncentiveExceptionRate-year_to_save").val(years);
+            var executive_id = $("#dvmanagemonthlyincentiveexceptionrate-executive_id").val();
+            var all_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+
+            $("#min_max_rate_container").html("");
+
+            if (months != '' && domain != '' && executive_id != '') {
+                $.ajax({
+                    type : 'POST',
+                    url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-finance/check_current_exception_rate') ?>',
+                    data : {years:years, months:months, domain:domain, executive_id:executive_id},
+                    success : function(data) {
+                        if (data != '') {
+                            var exception_rates = JSON.parse(data);
+                            if (exception_rates.length == 0) {
+                                set_add_exception_rate_btn(0);
+                                $.each(months, function(key, val){
+                                    var newTextBoxDiv = '<div id="TextBoxDiv'+val+'">';
+                                    newTextBoxDiv += '<button class="btn btn-primary month_label" type="button" >'+all_months[val-1]+'</button>';
+                                    newTextBoxDiv += '<div class="col-md-12 no_rate_defined">No Rate Defined!</div>';
+                                    newTextBoxDiv += '<div class="col-sm-12"><div class="col-sm-2 pull-right text-right"><button type="button" class="btn btn-info add_closures_range" closure_row='+val+'><i class="fa fa-plus"></i></button> <button type="button" class="btn btn-danger remove_closures_button"  closure_row='+val+'><i class="fa fa-times"></i></button></div></div>';
+
+                                    newTextBoxDiv += "<div class='col-md-12'><hr class='gray_hr'/></div>";
+
+                                    $("#min_max_rate_container").append(newTextBoxDiv);
+                                });
+                            } else {
+                                $.each(exception_rates, function(key, val) {
+                                    var single_month_exception = val['exceptions'];
+
+                                    var newTextBoxDiv = '<div id="TextBoxDiv'+key+'">';
+                                    newTextBoxDiv += '<button type="button" class="btn btn-primary month_label">'+all_months[val['month_number']-1]+'</button>';
+                                    if (val['is_exception'] == 1) {
+                                        newTextBoxDiv += ' <span class="badge badge-info">Exception Rate</span>';
+                                    } else {
+                                        newTextBoxDiv += ' <span class="badge badge-info">Default Incentive Rate</span>';
+                                    }
+                                    
+
+                                    if (single_month_exception == 'undefined' || single_month_exception == null) {
+                                        newTextBoxDiv += '<div class="col-md-12 no_rate_defined">No Rate Defined!</div>';
+                                    } else {
+                                        $.each(single_month_exception, function(month_exception_key, month_exception_val){
+
+                                            newTextBoxDiv += '<div class="closures_rate">';
+                                            newTextBoxDiv += '<div class="form-group col-md-4">\
+        <input id="min_closures_'+month_exception_key+'" name="DvManageMonthlyIncentiveExceptionRate[min_closures]['+key+'][]" type="number" class="form-control" required="required" value="'+ month_exception_val.min_closures +'" readonly>\
+                </div>';
+                                            newTextBoxDiv += '<div class="form-group col-md-4">\
+        <input id="max_closures_'+month_exception_key+'" name="DvManageMonthlyIncentiveExceptionRate[max_closures]['+key+'][]" type="number" class="form-control exec_max_closures_val" required="required" value="'+ month_exception_val.max_closures +'">\
+                </div>';
+                                            newTextBoxDiv += '<div class="form-group col-md-4">\
+        <input id="rate_'+month_exception_key+'" name="DvManageMonthlyIncentiveExceptionRate[rate]['+key+'][]" type="number" class="form-control" required="required" value="'+ month_exception_val.rate +'">\
+                </div>';
+                                            newTextBoxDiv += '</div>';
+                                       });
+                                    }
+                                    newTextBoxDiv += '<div class="col-sm-12"><div class="col-sm-2 pull-right text-right"><button type="button" class="btn btn-info add_closures_range" closure_row='+key+'><i class="fa fa-plus"></i></button> <button type="button" class="btn btn-danger remove_closures_button"  closure_row='+key+'><i class="fa fa-times"></i></button></div></div>';
+
+                                    newTextBoxDiv += "<div class='col-md-12'><hr class='gray_hr'/></div>";
+
+                                    set_add_exception_rate_btn(1);
+                                    $("#min_max_rate_container").append(newTextBoxDiv);
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        $(document).on("click", ".add_closures_range", function(){
+            var closure_row = $(this).attr("closure_row");
+            var total_closures_in_month = $("#TextBoxDiv"+closure_row + " .closures_rate").length;
+            var max_closure_val = parseInt($("#TextBoxDiv"+closure_row + " #max_closures_" + (total_closures_in_month-1)).val()) + 1;
+            var newTextBoxDiv = '<div class="closures_rate">';
+
+            if ($("#TextBoxDiv"+closure_row + " .closures_rate").last().length <= 0) {
+                max_closure_val = 0;
+            }
+
+            for (var i=0; i<=total_closures_in_month; i++) {
+                var min_closures = $("#TextBoxDiv"+closure_row + " #min_closures_"+i).val();
+                var max_closures = $("#TextBoxDiv"+closure_row + " #max_closures_"+i).val();
+                if (max_closures == "" || max_closures == "undefined" || min_closures == "" || min_closures == "undefined") {
+                    $("#TextBoxDiv"+closure_row + " #max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closures.");
+                    return false;
+                }
+
+                if (parseInt($("#TextBoxDiv"+closure_row + " #min_closures_"+i).val()) >= parseInt($("#TextBoxDiv"+closure_row + " #max_closures_"+i).val())) {
+                    $("#TextBoxDiv"+closure_row + " #max_closures_"+i).val('');
+                    alert("2Max Closures must be greather than Min Closures.");
+                    return false;
+                }
+            }
+
+            newTextBoxDiv += '<div class="form-group col-md-4">\
+        <input id="min_closures_'+total_closures_in_month+'" name="DvManageMonthlyIncentiveExceptionRate[min_closures]['+closure_row+'][]" type="number" class="form-control" required="required" value="'+ max_closure_val +'" readonly>\
+                </div>';
+            newTextBoxDiv += '<div class="form-group col-md-4">\
+        <input id="max_closures_'+total_closures_in_month+'" name="DvManageMonthlyIncentiveExceptionRate[max_closures]['+closure_row+'][]" type="number" class="form-control exec_max_closures_val" required="required" value="">\
+                </div>';
+            newTextBoxDiv += '<div class="form-group col-md-4">\
+        <input id="rate_'+total_closures_in_month+'" name="DvManageMonthlyIncentiveExceptionRate[rate]['+closure_row+'][]" type="number" class="form-control" required="required" value="">\
+                </div>';
+            newTextBoxDiv += '</div>';
+
+            if ($("#TextBoxDiv"+closure_row + " .closures_rate").last().length <= 0) {
+                $("#TextBoxDiv"+closure_row + " .month_label").after(newTextBoxDiv);
+                $("#TextBoxDiv"+closure_row + " .no_rate_defined").remove();
+            } else {
+                $("#TextBoxDiv"+closure_row + " .closures_rate").last().after(newTextBoxDiv);
+            }
+            set_add_exception_rate_btn(1);
+        });
+
+        $(document).on("click", ".remove_closures_button", function(){
+            var closure_row = $(this).attr("closure_row");
+            $("#TextBoxDiv"+closure_row + " .closures_rate").last().remove();
+            if ($(".closures_rate").length <= 0) {
+                set_add_exception_rate_btn(0);
+            }
+        });
+        
+        $(document).on("blur", ".closures_rate .exec_max_closures_val", function(){
+            var max_closures = $(this).val();
+            var max_closures_tx_bx_id = $(this).attr("id");
+            var closure_row = $(this).parent().parent().parent().find('.add_closures_range').attr('closure_row');
+            //console.log(closure_row);
+            var total_closures_in_month = $("#TextBoxDiv"+closure_row + " .closures_rate").length;
+            //console.log("______-");
+            //console.log(total_closures_in_month);
+            var current_mx_rev_tx_bx_id = max_closures_tx_bx_id.split("max_closures_")[1];
+            var last_min_closures = $("#min_closures_"+(parseInt(current_mx_rev_tx_bx_id))).val();
+            //console.log("============");
+            //console.log(last_min_closures);
+            //console.log("current_mx_rev_tx_bx_id : " + current_mx_rev_tx_bx_id);
+
+            for (var i=0; i<=total_closures_in_month; i++) {
+                var min_closures = $("#TextBoxDiv"+closure_row + " #min_closures_"+i).val();
+                var max_closures = $("#TextBoxDiv"+closure_row + " #max_closures_"+i).val();
+                for (var j=current_mx_rev_tx_bx_id+1; j<=total_closures_in_month; j++) {
+                    //$("#TextBoxDiv"+closure_row + " #min_closures_"+j).parent().parent().remove();
+                    //$("#TextBoxDiv"+closure_row + " #min_closures_"+j).remove();
+                    //$("#TextBoxDiv"+closure_row + " #max_closures_"+j).remove();
+                    //$("#TextBoxDiv"+closure_row + " #rate_"+j).remove();
+                }
+                if (max_closures == "" || max_closures == "undefined" || min_closures == "" || min_closures == "undefined") {
+                    $("#TextBoxDiv"+closure_row + " #max_closures_"+i).val('');
+                    alert("Max Closures must be greather than Min Closures.");
+                    return false;
+                }
+
+                if (parseInt($("#TextBoxDiv"+closure_row + " #min_closures_"+i).val()) >= parseInt($("#TextBoxDiv"+closure_row + " #max_closures_"+i).val())) {
+                    $("#TextBoxDiv"+closure_row + " #max_closures_"+i).val('');
+                    alert("2Max Closures must be greather than Min Closures.");
+                    return false;
+                }
+            }
+        });
+
+        $(document).on("change", "#select_period", function() {
+            var period = $(this).val();
+            $(".period_inputs").hide();
+            $("."+period).show();
+        });
+
+        $(".total_current_period").each(function(){
+            $("#sold_course_td").html((parseFloat($("#sold_course_td").html()) + parseFloat($.trim($(this).text()))).toFixed(2));
+        });
+
+        $(".per_person_average").each(function(){
+            $("#per_person_average_td").html((parseFloat($("#per_person_average_td").html()) + parseFloat($.trim($(this).text()))).toFixed(2));
+        });
+
+        $(".your_average").each(function(){
+            $("#your_average_td").html((parseFloat($("#your_average_td").html()) + parseFloat($.trim($(this).text()))).toFixed(2));
+        });
+
+        $(".company_average").each(function(){
+            $("#company_average_td").html((parseFloat($("#company_average_td").html()) + parseFloat($.trim($(this).text()))).toFixed(2));
+        });
+    });
+
+    // Rescheduleing
+    $(document).on('click', '#reschedule', function(){
+        var current_id = $(this).attr("data-current");
+        if(current_id != ''){
+            var module_id = $('#edit_module_form').val();
+            var total_session = $('#total_session').attr("data-total-session");
+            var event_date = $('#session_'+current_id).val();
+            $(document).ajaxStart(function(){
+                $("#loading_custom").show();
+            });
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/rescheduleing') ?>',
+                type: 'POST',
+                data: { current_id:current_id, module_id:module_id, total_session:total_session, event_date:event_date},
+                success: function(data){
+                    $('#TextBoxDiv'+current_id).nextAll('div').remove();
+                    $('#TextBoxDiv'+current_id).after().html(data);
+                    $("#loading_custom").hide();
+                }
+            });
+        }
+    });
+
+    // on change country
+    $("#country").change(function(){
+        if(this.value != ''){
+            $("#loading_custom").show();
+            var country_id = $(this).val();
+            var att_name = $(this).attr('name');
+            if(att_name == 'DvRegistration[country]'){
+                var city_dummy = '<select id="dvregistration-city" class="form-control" name="DvRegistration[city]" required="required"><option value="">Select City</option></select>';
+            } else {
+                var city_dummy = '<select id="dvusers-city" class="form-control" name="DvUsers[city]" required="required"><option value="">Select City</option></select>';
+            }
+            
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/get_states') ?>',
+                type: 'POST',
+                data: { country_id: country_id,att_name:att_name},
+                success: function(data){
+                    $("#dvusers-state").replaceWith(data);
+                    $("#dvregistration-state").replaceWith(data);
+                    $("#dvusers-city").replaceWith(city_dummy);
+                    $("#loading_custom").hide();
+                }
+            });
+        }
+    });
+
+    // on change State
+    $('body').on('change', '#dvusers-state', function (){
+        var state_id = $(this).val();
+        var att_name = $(this).attr('name');  
+        if(state_id != ''){
+            $("#loading_custom").show();
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/get_cities') ?>',
+                type: 'POST',
+                data: { state_id: state_id,att_name:att_name},
+                success: function(data){
+                    $("#dvusers-city").replaceWith(data);
+                    $("#dvregistration-city").replaceWith(data);
+                    $("#loading_custom").hide();
+                }
+            });
+        }
+    });
+
+   $('#dvregistration-is_full_payment input[type=radio]').change(function(){
+        if (this.value == '0'){
+            $(".installment_boxe").show();
+            if($("#dvregistration-is_pdc").prop('checked')){
+                $(".pdc_ref_form_field").css('display','block');
+            }else{
+                $(".pdc_ref_form_field").css('display','none');
+            }
+            $("#dvregistration-modules_allowed").val("");
+        } else if(this.value == '1'){
+            $(".installment_boxe").hide();
+            var course_val = $("#course").val();
+            
+            if(course_val == 1){
+                $("#dvregistration-modules_allowed").val("6");
+            }else if(course_val == 2){
+                $("#dvregistration-modules_allowed").val("5");
+            }
+
+        }
+    });
+
+      $('#department').change(function(){
+        if((this.value == '2') || (this.value == '7')){    
+            $('#usercourse').removeClass('hide');
+        } else {
+            $('#usercourse').addClass('hide');
+        }
+
+        var dep_id = $(this).val();
+        $("#loading_custom").show();
+
+        $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/get_course') ?>',
+                type: 'POST',
+                data: { dep_id: dep_id},
+                success: function(data){
+                    $('#usercourse').replaceWith(data);
+                 //   $.ajax({
+                 //       url: '<?php //echo \Yii::$app->getUrlManager()->createUrl('dv-users/user_team') ?>',
+                 //       type: 'POST',
+                 //       data: { dep_id: dep_id},
+                 //       success: function(data){
+                 //           $('#dvusers-team').replaceWith(data);
+                            //$("#loading_custom").hide();
+                            $.ajax({
+                                url:'<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/user_role') ?>',
+                                type: 'POST',
+                                data: { dep_id: dep_id},
+                                success: function(data){
+                                    $('#UsersRole').replaceWith(data);
+                                    $("#loading_custom").hide();
+                                }
+                            });
+                    //    }
+                  //  });
+                }
+            });
+   }); 
+
+   // select course on dv-registration page
+   $(".dv-participant-create #course").change(function(){
+
+        var dv_email = $("#dvregistration-email").val();
+        // var dv_course = this.value;
+        if(dv_email == ''){
+            swal("Warning!", "Please, First enter email id", "warning")
+            .then((value) => {
+                 $("#loading_custom").hide();
+                 return false;
+            });
+        }
+       
+
+       if(this.value == 1 || this.value == 2 || this.value == 13 || this.value == 14){
+     //  if(this.value == 'CDMM' || this.value == 'CPDM' || this.value == 'DAP' || this.value == 'DAR'){
+        if($("#opt_for_3_months").prop('checked')){
+            $(".field-dvregistration-available_batch_opt").css('display','block');
+        }else{
+            $(".field-dvregistration-available_batch_opt").css('display','none');
+        }
+      }else{
+            $(".field-dvregistration-available_batch_opt").css('display','none');
+      }
+
+      if(this.value != ''){
+
+        $("#loading_custom").show();
+        if ((this.value == 1) || (this.value == 2)){
+            $(".all_check").show();
+            $(".Tableau_CWAW").css('display','none');
+            $(".cmam_cfmm_tj").css('display','block');
+        } else if((this.value == 13) || (this.value == 14)){
+            $(".all_check").show();
+            $(".cmam_cfmm_tj").css('display','none');
+            $(".Tableau_CWAW").css('display','block');
+        }else {
+            $(".all_check").hide();
+        }
+        var course_id = $(this).val();
+        var dummp_batch = '<select id="dvregistration-course_batch" class="form-control" name="DvRegistration[course_batch]" required="required"><option value="">Select Batch</option></select>';
+
+        $.ajax({
+            url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-registration/check_email') ?>',
+            type: 'POST',
+            data: { email: dv_email , course: course_id},
+            success: function(data){
+                // alert(data);
+                if(data == '1'){
+                    $("#course").removeClass('error');
+                    $(".field-course  span.error-summary-msg").remove();
+                    $("#course").addClass('error');
+                    $(".field-course ").append("<span class='error-summary-msg'>Email already exist with this course.</span>");
+                }else{
+                    $("#course").removeClass('error');
+                    $(".field-course  span.error-summary-msg").remove();
+                }            
+            }
+        });
+
+        $.ajax({
+            url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-registration/get_format') ?>',
+            type: 'POST',
+            data: { course_id: course_id},
+            success: function(data){
+                alert(data);
+               $("#dvregistration-course_format").replaceWith(data);
+               $.ajax({
+                    url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-registration/modules_allowed') ?>',
+                    type: 'POST',
+                    data: { course_id: course_id},
+                    success: function(data){
+                        $("#dvregistration-modules_allowed").replaceWith(data);
+                        $("#dvregistration-course_batch").replaceWith(dummp_batch)
+                        $("#loading_custom").hide();
+                    }
+                });
+            }
+        });
+       }else{
+            $("#course").removeClass('error');
+            $("#course").addClass('error');
+            $(".field-course  span.error-summary-msg").remove();
+       }
+       $("#dvregistration-modules_allowed").val("");
+   });
+
+   // select course on
+   $("#module_course").change(function(){   
+     if(this.value != ''){
+        $("#loading_custom").show();
+        var course_id = $(this).val();
+        
+        if(course_id == 19){
+            $('#dvparticipantmodules-view').val('0');
+        } else {
+            $('#dvparticipantmodules-view').val('1');
+        }
+
+         /*$.ajax({
+            url: '<?php //echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/trainingtopics') ?>',
+            type: 'POST',
+            data: { course_id: course_id},
+            success: function(data){
+                $("#dvparticipantmodules-training_topic").replaceWith(data);*/
+
+                $.ajax({
+                    url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/list_trainer') ?>',
+                    type: 'POST',
+                    data: { course_id: course_id},
+                    success: function(data){
+                        $("#dvparticipantmodules-trainer").replaceWith(data);
+                            /*$.ajax({
+                                url: '<?php //echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/delivery_person') ?>',
+                                type: 'POST',
+                                data: { course_id: course_id},
+                                success: function(data){
+                                    $("#dvparticipantmodules-delivery_person").replaceWith(data);
+                                    $("#loading_custom").hide();
+                                }
+                            });*/
+                         $("#loading_custom").hide();
+                    }
+                });             
+               
+          /*  }
+        });*/
+      }
+   });
+
+   $('body').on('change', '#dvparticipantmodules-trainer', function (){ 
+        if(this.value != ''){
+            $("#loading_custom").show();
+            var trainer_id = $(this).val();
+                $.ajax({ url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/delivery_person') ?>',
+                        type: 'POST',
+                        data: { trainer_id: trainer_id},
+                        success: function(data){
+                            $("#dvparticipantmodules-delivery_person").replaceWith(data);
+                            $("#loading_custom").hide();
+                        }
+                    });
+            }
+        });
+
+    // on change select course format
+   /* $('body').on('change', '#dvregistration-course_format', function (){
+        $("#loading_custom").show();
+        var format_id = $(this).val();
+        var course_id = $("#course").val();
+         $.ajax({
+            url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-registration/get_batch') ?>',
+            type: 'POST',
+            data: { course_id: course_id, format_id: format_id},
+            success: function(data){
+               $("#dvregistration-course_batch").replaceWith(data);
+               $("#loading_custom").hide();
+            }
+        });
+   });*/
+
+    // on change select DV Users course format
+    $('body').on('change', '#user_course', function (){
+        var cid = $(this).val();
+        $("#loading_custom").show();
+        $.ajax({
+            url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/course_coordinator') ?>',
+            type: 'POST',
+            data: { cid: cid},
+            success: function(data){
+               $("#dvusers-coordinator").replaceWith(data);
+               $("#loading_custom").hide();
+            }
+        });
+    });
+
+    // submit form by Modal on create_module
+   $('#submit').click(function(){
+        $('#confirm-submit .modal-body .session_error').replaceWith('<div class="session_error"></div>');
+        //$('#DvParticipantModules').removeClass('dv_module');
+        //$('#DvParticipantModules').submit();
+        $("#loading_custom").show();
+        $.ajax({
+            url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-delivery/batch_validate') ?>',
+            type: 'POST',
+            data: $("#DvParticipantModules").serialize(),
+            success: function(data){
+                if(data == '1'){
+                    $('#confirm-submit .modal-body .session_error').replaceWith('<div class="session_error"></div>');
+                    $('#DvParticipantModules').removeClass('dv_module');
+                    $('#DvParticipantModules').submit();
+                } else {
+                    $('#confirm-submit .modal-body .session_error').replaceWith(data);
+                }
+               $("#loading_custom").hide();
+            }
+        });
+    });
+
+   $('#create_user').on('submit', function(){
+        var password = $("#dvusers-password").val();
+        var repassword = $("#cpassword").val();
+        if (password != repassword){
+            $('.field-dvusers-cpassword').addClass('has-error');
+            return false;
+        } else {
+            $('.field-dvusers-cpassword').removeClass('has-error');
+        }
+
+        if($('#dvusers-gender input:checked').length<=0){
+            $('.field-dvusers-gender').addClass('has-error');
+            return false;
+        } else {
+            $('.field-dvusers-gender').removeClass('has-error');
+        }
+    });
+
+   $(".dv-users-update #dvusers-password").keyup(function(){
+    var password = $("#dvusers-password").val();
+    var repassword = $("#cpassword").val();
+      if(password == ''){
+            $("#cpassword").prop('required',false);
+            $('.field-dvusers-cpassword').removeClass('has-error');
+            $('#update_user').prop('disabled', false);
+        } else {
+            $("#cpassword").prop('required',true);
+                if (password != repassword){
+                    $('.field-dvusers-cpassword').addClass('has-error');
+                    $('#update_user').prop('disabled', true);
+                } else {
+                    $('.field-dvusers-cpassword').removeClass('has-error');
+                    $('#update_user').prop('disabled', false);
+                }
+        }
+    });
+
+    $(".dv-users-update #cpassword").keyup(function(){
+        var password = $("#dvusers-password").val();
+        var repassword = $("#cpassword").val();
+        if(repassword == ''){
+            $("#dvusers-password").prop('required',false);
+            $('.field-dvusers-cpassword').removeClass('has-error');
+        } else {
+            $("#dvusers-password").prop('required',true);
+             if (password != repassword){
+                $('.field-dvusers-cpassword').addClass('has-error');
+                $('#update_user').prop('disabled', true);
+             } else {
+                $('.field-dvusers-cpassword').removeClass('has-error');
+                $('#update_user').prop('disabled', false);
+             }
+        }
+        /*
+        $("#dvusers-password").prop('required',true);*/
+    });
+
+/*   $('#update_user').on('submit', function(){ alert('d5');
+        var password = $("#dvusers-password").val();
+        var repassword = $("#cpassword").val();
+        if (password != repassword){
+            $('.field-dvusers-cpassword').addClass('has-error');
+            alert('d');
+            return false;
+        } else {
+            $('.field-dvusers-cpassword').removeClass('has-error');
+        }
+    });*/   
+
+   
+
+    $("#dvusers-email").keyup(function(){
+        var email = $(this).val();
+        $.ajax({
+            url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/check_email') ?>',
+            type: 'POST',
+            data: { email: email},
+            success: function(data){
+                if(data == '1'){
+                    $("#dvusers-email").addClass('error');
+                    $('button#create_user').prop("type", "button");
+                } else {
+                    $("#dvusers-email").removeClass('error');
+                    $('button#create_user').prop("type", "submit");
+                    return false;
+                } 
+            }
+        });
+    });
+
+    $('#user-search-form').on('submit', function(){
+        var sear = $('#dvusers-search').val();
+        if(sear == ''){
+            $("#dvusers-search").addClass('error');
+            return false;
+        } else {
+            $("#dvusers-search").removeClass('error');
+        }        
+    });
+
+    $('#user-filter').on('submit', function(){
+        var role = $('#role').val();
+        var team = $('#team').val();
+        var department = $('#depart').val();
+        
+        if((role == '')&&(team == '')&&(department == '')){
+            $("#role").addClass('error');
+            $('#team').addClass('error');
+            $('#depart').addClass('error');
+            return false;
+        } else {
+            $("#role").removeClass('error');
+            $('#team').removeClass('error');
+            $('#depart').removeClass('error');
+        }        
+    });
+
+    /*$('body').on('change', '#trainerconfirm', function (){
+        var value = $(this).val();
+        if(value == 1){
+             $(".trainer_confirmation").removeClass('hide');
+        } else if(value == 0) {
+             $(".trainer_confirmation").addClass('hide');
+        }
+    });*/
+
+    $('.trainer_confirm input[type="checkbox"]').click(function(){
+        if($(this).prop("checked") == true){
+            $(".trainer_confirmation").removeClass('hide');
+        } else if($(this).prop("checked") == false){
+            $(".trainer_confirmation").addClass('hide');
+        }
+    });
+
+
+    $('body').on('change', '#running_batch_status', function (){
+        var value = $(this).val();
+        if(value == 1){
+             $(".pefor_info").removeClass('hide');
+        } else if(value == 0) {
+             $(".pefor_info").addClass('hide');
+        }
+    });
+
+    // on change select by date or month
+    $('body').on('change', '#by_date_month', function (){
+        var selection_id = $(this).val();
+        if(selection_id != ''){
+            if(selection_id == 'd'){
+                $(".select_by_date").removeClass('hide');
+                $(".select_by_month").addClass('hide');
+                $("select.select_by_month").val('');
+            } else if(selection_id == 'm'){
+                $(".select_by_month").removeClass('hide');
+                $(".select_by_date").addClass('hide');
+                $("select.select_by_date").val('');
+            } else {
+                $(".select_by_month").addClass('hide');
+                $(".select_by_date").addClass('hide');
+                $("select.select_by_month").val('');
+                $("select.select_by_date").val('');
+            }
+        }
+
+        
+        /*if(state_id != ''){
+            $("#loading_custom").show();
+            $.ajax({
+                url: '<?php //echo \Yii::$app->getUrlManager()->createUrl('dv-users/get_cities') ?>',
+                type: 'POST',
+                data: { state_id: state_id,att_name:att_name},
+                success: function(data){
+                    $("#dvusers-city").replaceWith(data);
+                    $("#dvregistration-city").replaceWith(data);
+                    $("#loading_custom").hide();
+                }
+            });
+        }*/
+    });
+
+
+    
+
+   $("#dvusersteam-name").autocomplete({        
+        source: function( request, response){
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/team_name') ?>',
+                type: 'post',
+                dataType: "json",
+                data: {
+                    search: request.term,
+                    department: $('#ccourse').val(),
+                    managers: $('#managers').val(),
+                },
+                success: function( data ) {
+                    response( data );
+                }
+            });
+        },
+        select: function (event, ui) {
+            $('#dvusersteam-name').val(ui.item.label); // display the selected text
+           // $('#selectuser_id').val(ui.item.value); // save selected id to input
+            return false;
+        }
+    });        
+    
+    // on change Department for Team
+    $('body').on('change', '#ccourse', function (){
+        var depid = $(this).val();        
+        if(depid != ''){
+            $("#loading_custom").show();
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/users_by_dep') ?>',
+                type: 'POST',
+                data: { depid: depid},
+                success: function(data){
+                    $("#managers").replaceWith(data);                    
+                    $("#loading_custom").hide();
+                }
+            });
+        }
+    });    
+
+    // on change Department for Team
+    $('body').on('change', '.dv-users-update #department', function (){
+        var depid = $(this).val();        
+        if(depid != ''){
+            $("#loading_custom").show();
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/users_by_dep2') ?>',
+                type: 'POST',
+                data: { depid: depid},
+                success: function(data){                    
+                    $("#dvusers-team").replaceWith(data);
+                    $("#loading_custom").hide();
+                }
+            });
+        }
+    });
+
+    // on change Department for Team
+    $('body').on('change', '#update_manager', function (){
+        var mid = $(this).val();        
+        if(mid != ''){
+            $("#loading_custom").show();
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-users/update_manager') ?>',
+                type: 'POST',
+                data: { mid: mid},
+                success: function(data){                    
+                    $("#new_manager").replaceWith(data);
+                    $("#loading_custom").hide();
+                }
+            });
+        }
+    });        
+
+    // on change Department for Team
+    $('body').on('change', '#dvmanagemonthlyincentiveexceptionrate-months', function (){
+        exception_closures_counter = 0;
+        var month = $(this).val();        
+        var domain = $("#dvmanagemonthlyincentiveexceptionrate-domain").val();
+        var executive_id = $("#dvmanagemonthlyincentiveexceptionrate-executive_id").val();
+        $("#min_max_rate_container").html('');
+        $("#add_remove_rate_btn").html('');
+        if(month != '' && domain != ''){
+            $("#loading_custom").show();
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-finance/get_month_wise_closures') ?>',
+                type: 'POST',
+                data: {month: month, domain:domain, executive_id:executive_id},
+                success: function(data){
+                    if (data == 0) {
+                        alert("No rules added for " + month);
+                    } else {
+                        var closures = JSON.parse(data);
+                        if (closures['current_incentive'] == "") {
+                            $("#min_max_rate_container").html('<div class="col-md-12 form-group"><div class="small_custom_alert alert-warning">No rules.</div></div>');
+                        } else {
+                            if (closures['is_exception'] == "1") {
+                                $("#min_max_rate_container").html('<div class="col-md-12 form-group"><div class="small_custom_alert alert-info">Rate with Exception.</div></div>');
+                            } else {
+                                $("#min_max_rate_container").html('<div class="col-md-12 form-group"><div class="small_custom_alert alert-info">Rate without Exception.</div></div>');
+                            }
+                            $.each(closures['current_incentive'], function(key,val){
+                                var newTextBoxDiv = '<div id="TextBoxDiv'+key+'">';
+                                $.each(val, function(k,v){
+
+                                    newTextBoxDiv += '<div class="form-group col-md-4">\
+        <input id="'+ k +'_'+key+'" name="DvManageMonthlyIncentiveExceptionRate['+ k +'][]" type="number" class="form-control" required="required" value="'+ v +'">\
+                </div>';
+                                });
+                                $("#min_max_rate_container").append(newTextBoxDiv);
+                                exception_closures_counter++;
+                            });
+                            
+                            if ($("#min_max_rate_container").length <= 0) {
+                            
+                            } else {
+                                if ($("#op_btn").length <= 0) {
+                                    var add_remove_rate_btn = $('<div id="op_btn">');
+                                    add_remove_rate_btn.after().html('<button type="button" id="add_closures_range" class="btn btn-info"><i class="fa fa-plus"></i></button><button type="button" id="remove_closures_button" class="btn btn-danger"><i class="fa fa-times"></i></button>');
+                                    add_remove_rate_btn.appendTo("#add_remove_rate_btn");
+                                }
+                            }
+                        }
+                    }
+                    $("#loading_custom").hide();
+                }
+            });
+        }
+    });
+    $('body').on('change', '#dvmanagemonthlyincentiveexceptionrate-domains', function (){
+        exception_closures_counter = 0;
+        var domain = $(this).val();
+        var month = $("#dvmanagemonthlyincentiveexceptionrate-month").val();
+        var executive_id = $("#dvmanagemonthlyincentiveexceptionrate-executive_id").val();
+        $("#min_max_rate_container").html('');
+        $("#add_remove_rate_btn").html('');
+        if(month != '' && domain != ''){
+            $("#loading_custom").show();
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-finance/get_month_wise_closures') ?>',
+                type: 'POST',
+                data: {month: month, domain:domain, executive_id:executive_id},
+                success: function(data){
+                    if (data == 0) {
+                        alert("No rules added for " + month);
+                    } else {
+                        var closures = JSON.parse(data);
+                        if (closures['current_incentive'] == "") {
+                            $("#min_max_rate_container").html('<div class="col-md-12 form-group"><div class="small_custom_alert alert-warning">No rules.</div></div>');
+                        } else {
+                            if (closures['is_exception'] == "1") {
+                                $("#min_max_rate_container").html('<div class="col-md-12 form-group"><div class="small_custom_alert alert-info">Rate with Exception.</div></div>');
+                            } else {
+                                $("#min_max_rate_container").html('<div class="col-md-12 form-group"><div class="small_custom_alert alert-info">Rate without Exception.</div></div>');
+                            }
+                            $.each(closures['current_incentive'], function(key,val){
+                                var newTextBoxDiv = '<div id="TextBoxDiv'+key+'">';
+                                $.each(val, function(k,v){
+
+                                    newTextBoxDiv += '<div class="form-group col-md-4">\
+    <input id="'+ k +'_'+key+'" name="DvManageMonthlyIncentiveExceptionRate['+ k +'][]" type="number" class="form-control" required="required" value="'+ v +'">\
+            </div>';
+                                });
+                                $("#min_max_rate_container").append(newTextBoxDiv);
+                                exception_closures_counter++;
+                            });
+
+                            if ($("#min_max_rate_container").length <= 0) {
+
+                            } else {
+                                if ($("#op_btn").length <= 0) {
+                                    var add_remove_rate_btn = $('<div id="op_btn">');
+                                    add_remove_rate_btn.after().html('<button type="button" id="add_closures_range" class="btn btn-info"><i class="fa fa-plus"></i></button> <button type="button" id="remove_closures_button" class="btn btn-danger"><i class="fa fa-times"></i></button>');
+                                    add_remove_rate_btn.appendTo("#add_remove_rate_btn");
+                                }
+                            }
+                        }
+                        
+                    }
+                    $("#loading_custom").hide();
+                }
+            });
+        }
+    });
+    $('body').on('change', '#dvmanagemonthlyincentiveexceptionrate-executive_ids', function (){
+        exception_closures_counter = 0;
+        var executive_id = $(this).val();
+        var month = $("#dvmanagemonthlyincentiveexceptionrate-month").val();
+        var domain = $("#dvmanagemonthlyincentiveexceptionrate-domain").val();
+        $("#min_max_rate_container").html('');
+        $("#add_remove_rate_btn").html('');
+        if(month != '' && domain != '' && executive_id != ''){
+            $("#loading_custom").show();
+            $.ajax({
+                url: '<?php echo \Yii::$app->getUrlManager()->createUrl('dv-finance/get_month_wise_closures') ?>',
+                type: 'POST',
+                data: {month: month, domain:domain, executive_id:executive_id},
+                success: function(data){
+                    if (data == 0) {
+                        alert("No rules added for " + month);
+                    } else {
+                        var closures = JSON.parse(data);
+                        if (closures['current_incentive'] == "") {
+                            $("#min_max_rate_container").html('<div class="col-md-12 form-group"><div class="small_custom_alert alert-warning">No rules.</div></div>');
+                        } else {
+                            if (closures['is_exception'] == "1") {
+                                $("#min_max_rate_container").html('<div class="col-md-12 form-group"><div class="small_custom_alert alert-info">Rate with Exception.</div></div>');
+                            } else {
+                                $("#min_max_rate_container").html('<div class="col-md-12 form-group"><div class="small_custom_alert alert-info">Rate without Exception.</div></div>');
+                            }
+                            $.each(closures['current_incentive'], function(key,val){
+                                var newTextBoxDiv = '<div id="TextBoxDiv'+key+'">';
+                                $.each(val, function(k,v){
+
+                                    newTextBoxDiv += '<div class="form-group col-md-4">\
+        <input id="'+ k +'_'+key+'" name="DvManageMonthlyIncentiveExceptionRate['+ k +'][]" type="number" class="form-control" required="required" value="'+ v +'">\
+                </div>';
+                                });
+                                $("#min_max_rate_container").append(newTextBoxDiv);
+                                exception_closures_counter++;
+                            });
+
+                            if ($("#min_max_rate_container").length <= 0) {
+                                alert("No Rules");
+                            } else {
+                                if ($("#op_btn").length <= 0) {
+                                    var add_remove_rate_btn = $('<div id="op_btn">');
+                                    add_remove_rate_btn.after().html('<button type="button" id="add_closures_range" class="btn btn-info"><i class="fa fa-plus"></i></button> <button type="button" id="remove_closures_button" class="btn btn-danger"><i class="fa fa-times"></i></button>');
+                                    add_remove_rate_btn.appendTo("#add_remove_rate_btn");
+                                }
+                            }
+                        }
+                    }
+                    $("#loading_custom").hide();
+                }
+            });
+        }
+    });
+
+    function set_add_exception_rate_btn(enable) {
+        if (enable == 1) {
+            $("#add_exception_rate").attr("disabled", false);
+        } else {
+            $("#add_exception_rate").attr("disabled", true);
+        }
+    }
+
+</script>
+    </body>
+    </html>
+    <?php $this->endPage() ?>
+<?php } ?>

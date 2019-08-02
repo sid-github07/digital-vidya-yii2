@@ -1,0 +1,22 @@
+<?php
+
+use yii\helpers\Html;
+
+
+/* @var $this yii\web\View */
+/* @var $model app\models\MwUsers */
+
+$this->title = 'Digital Vidya: Create Team for Users';
+$second_title = 'Create Team for Users';
+$this->params['breadcrumbs'][] = $second_title; ?>
+<div style="min-height:35px; "></div>
+<div class="container">
+  <div class="row">
+    <div class="col-md-6">
+    	 <div class="dv-users-create">
+    	 	<?= $this->render('_form_team', [ 'model' => $model, ]) ?>
+    	 </div>
+    </div>
+    <div class="col-md-6"></div>
+  </div>
+</div>
